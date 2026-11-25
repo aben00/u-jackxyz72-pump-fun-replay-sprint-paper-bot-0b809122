@@ -1,0 +1,1 @@
+{"description":"Deterministic paper-trading bot for make.fun's Pump.fun Replay Sprint (agent-fun/replay/v2). Early-flow momentum over pump.fun bonding curves.","engines":{"node":">=22.18"},"license":"MIT","main":"main.ts","name":"u-jackxyz72-pump-fun-replay-sprint-paper-bot-0b809122","scripts":{"start":"node main.ts"},"type":"module","version":"1.0.0"}

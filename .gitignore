@@ -1,0 +1,7 @@
+node_modules/
+*-kit/
+kit/
+dataset/
+*.tar.gz
+*.tgz
+.DS_Store
