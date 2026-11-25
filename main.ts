@@ -46,12 +46,12 @@ const ENTRY_MIN_REAL_SOL = 5n * LAMPORTS_PER_SOL;
 const ENTRY_MAX_REAL_SOL = 80n * LAMPORTS_PER_SOL;
 const ENTRY_NEAR_HIGH_PCT = 92n; // price >= 92% of its window high
 
-const TAKE_PROFIT_PCT = 120n; // sell when value >= 120% of cost
-const STOP_LOSS_PCT = 93n; // sell when value <= 93% of cost
-const TRAIL_ARM_PCT = 110n; // trailing arms once peak >= 110% of cost
-const TRAIL_DROP_PCT = 94n; // sell when value <= 94% of peak
-const STALE_AGE_SLOTS = 9000; // flat too long -> free the slot
-const STALE_MAX_PCT = 105n; // stale exit only while value < 105% of cost
+const TAKE_PROFIT_PCT = 115n; // sell when value >= 115% of cost
+const STOP_LOSS_PCT = 94n; // sell when value <= 94% of cost
+const TRAIL_ARM_PCT = 108n; // trailing arms once peak >= 108% of cost
+const TRAIL_DROP_PCT = 95n; // sell when value <= 95% of peak
+const STALE_AGE_SLOTS = 6000; // flat too long -> free the slot
+const STALE_MAX_PCT = 102n; // stale exit only while value < 102% of cost
 
 // Guardrail probes: coins that missed the strict entry window get one small
 // second chance (0.02 SOL, still above the 0.01 SOL round-trip bar) so the
