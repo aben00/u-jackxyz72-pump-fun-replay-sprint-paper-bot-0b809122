@@ -35,7 +35,7 @@ import {
 } from './vendor/makefun-bot.ts';
 
 // ------------------------------------------------------------------ tuning
-const STAKE_LAMPORTS = (LAMPORTS_PER_SOL * 8n) / 100n; // 0.08 SOL per entry
+const STAKE_LAMPORTS = (LAMPORTS_PER_SOL * 5n) / 100n; // 0.05 SOL per entry
 const MIN_BUY_LAMPORTS = (LAMPORTS_PER_SOL * 2n) / 100n; // 0.02 SOL floor
 const MAX_SLIPPAGE_BPS = 1000; // 10%: latency is 2 slots, reject wild fills
 
