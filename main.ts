@@ -40,14 +40,14 @@ const MIN_BUY_LAMPORTS = (LAMPORTS_PER_SOL * 2n) / 100n; // 0.02 SOL floor
 const MAX_SLIPPAGE_BPS = 1000; // 10%: latency is 2 slots, reject wild fills
 
 const ENTRY_MAX_AGE_SLOTS = 6000; // sustained-flow window (~20 min of slots)
-const ENTRY_MIN_TRADES = 25;
-const ENTRY_MIN_BUYERS = 12;
+const ENTRY_MIN_TRADES = 40;
+const ENTRY_MIN_BUYERS = 15;
 const ENTRY_MIN_REAL_SOL = 5n * LAMPORTS_PER_SOL;
 const ENTRY_MAX_REAL_SOL = 80n * LAMPORTS_PER_SOL;
-const ENTRY_NEAR_HIGH_PCT = 85n; // price >= 85% of its window high
+const ENTRY_NEAR_HIGH_PCT = 92n; // price >= 92% of its window high
 
-const TAKE_PROFIT_PCT = 125n; // sell when value >= 125% of cost
-const STOP_LOSS_PCT = 92n; // sell when value <= 92% of cost
+const TAKE_PROFIT_PCT = 120n; // sell when value >= 120% of cost
+const STOP_LOSS_PCT = 93n; // sell when value <= 93% of cost
 const TRAIL_ARM_PCT = 110n; // trailing arms once peak >= 110% of cost
 const TRAIL_DROP_PCT = 94n; // sell when value <= 94% of peak
 const STALE_AGE_SLOTS = 9000; // flat too long -> free the slot
@@ -227,7 +227,7 @@ await runBot({
       if (tape.trades < ENTRY_MIN_TRADES) continue;
       if (tape.buyers.size < ENTRY_MIN_BUYERS) continue;
       if (tape.buyCount <= tape.sellCount) continue;
-      if (tape.buyVol < tape.sellVol * 3n) continue; // buy volume must dominate 3x
+      if (tape.buyVol < tape.sellVol * 4n) continue; // buy volume must dominate 4x
       const realSol = curve.real_quote_reserves;
       if (realSol < ENTRY_MIN_REAL_SOL || realSol > ENTRY_MAX_REAL_SOL) continue;
       if (
