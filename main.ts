@@ -39,18 +39,18 @@ const STAKE_LAMPORTS = (LAMPORTS_PER_SOL * 8n) / 100n; // 0.08 SOL per entry
 const MIN_BUY_LAMPORTS = (LAMPORTS_PER_SOL * 2n) / 100n; // 0.02 SOL floor
 const MAX_SLIPPAGE_BPS = 1000; // 10%: latency is 2 slots, reject wild fills
 
-const ENTRY_MAX_AGE_SLOTS = 3000; // coin must be young (~10 min of slots)
-const ENTRY_MIN_TRADES = 6;
-const ENTRY_MIN_BUYERS = 5;
-const ENTRY_MIN_REAL_SOL = 2n * LAMPORTS_PER_SOL;
-const ENTRY_MAX_REAL_SOL = 60n * LAMPORTS_PER_SOL;
+const ENTRY_MAX_AGE_SLOTS = 6000; // sustained-flow window (~20 min of slots)
+const ENTRY_MIN_TRADES = 15;
+const ENTRY_MIN_BUYERS = 8;
+const ENTRY_MIN_REAL_SOL = 5n * LAMPORTS_PER_SOL;
+const ENTRY_MAX_REAL_SOL = 80n * LAMPORTS_PER_SOL;
 const ENTRY_NEAR_HIGH_PCT = 85n; // price >= 85% of its window high
 
-const TAKE_PROFIT_PCT = 180n; // sell when value >= 180% of cost (let runners run)
-const STOP_LOSS_PCT = 88n; // sell when value <= 88% of cost
-const TRAIL_ARM_PCT = 115n; // trailing arms once peak >= 115% of cost
-const TRAIL_DROP_PCT = 90n; // sell when value <= 90% of peak
-const STALE_AGE_SLOTS = 12000; // flat too long -> free the slot
+const TAKE_PROFIT_PCT = 130n; // sell when value >= 130% of cost
+const STOP_LOSS_PCT = 90n; // sell when value <= 90% of cost
+const TRAIL_ARM_PCT = 112n; // trailing arms once peak >= 112% of cost
+const TRAIL_DROP_PCT = 93n; // sell when value <= 93% of peak
+const STALE_AGE_SLOTS = 9000; // flat too long -> free the slot
 const STALE_MAX_PCT = 105n; // stale exit only while value < 105% of cost
 
 // Guardrail probes: coins that missed the strict entry window get one small
@@ -80,7 +80,11 @@ interface Tape {
 }
 
 const tapes = new Map<string, Tape>();
-const decided = new Set<string>(); // mints already bought (or skipped for good)
+// mints blocked from (re-)entry until this slot: a buy blocks re-entry for a
+// long cooldown, so a coin that ran once can be traded again on a fresh leg
+// but never churned trade after trade.
+const blockedUntil = new Map<string, number>();
+const REENTRY_COOLDOWN_SLOTS = 20000;
 const peaks = new Map<string, bigint>(); // mint -> best mark-to-market value seen
 
 function newTape(slot: number): Tape {
@@ -204,7 +208,7 @@ await runBot({
         // CompleteEvent: the harness closes the position; drop our tracking.
         tapes.delete(e.mint);
         peaks.delete(e.mint);
-        decided.delete(e.mint);
+        blockedUntil.delete(e.mint);
       }
     }
 
@@ -212,7 +216,7 @@ await runBot({
     for (const mint of touched) {
       if (orders.length >= caps.max_orders_per_batch) break;
       if (openSlots <= 0) break;
-      if (decided.has(mint)) continue;
+      if (batch.slot < (blockedUntil.get(mint) ?? 0)) continue;
       const tape = tapes.get(mint);
       const curve = state.curves.get(mint);
       if (tape === undefined || curve === undefined || curve.complete) continue;
@@ -245,7 +249,7 @@ await runBot({
         quote_lamports: amount,
         max_slippage_bps: MAX_SLIPPAGE_BPS,
       });
-      decided.add(mint);
+      blockedUntil.set(mint, batch.slot + REENTRY_COOLDOWN_SLOTS);
       free -= amount + txFee;
       openSlots -= 1;
     }
@@ -254,14 +258,14 @@ await runBot({
     for (const mint of touched) {
       if (orders.length >= caps.max_orders_per_batch) break;
       if (openSlots <= 0) break;
-      if (decided.has(mint)) continue;
+      if (batch.slot < (blockedUntil.get(mint) ?? 0)) continue;
       const tape = tapes.get(mint);
       const curve = state.curves.get(mint);
       if (tape === undefined || curve === undefined || curve.complete) continue;
       if (tape.createdSlot === null) continue;
       const age = batch.slot - tape.createdSlot;
       if (age > PROBE_MAX_AGE_SLOTS) {
-        decided.add(mint); // past even the probe window; never reconsider
+        blockedUntil.set(mint, batch.slot + REENTRY_COOLDOWN_SLOTS);
         continue;
       }
       if (age < PROBE_MIN_AGE_SLOTS) continue;
@@ -289,7 +293,7 @@ await runBot({
         quote_lamports: MIN_BUY_LAMPORTS,
         max_slippage_bps: MAX_SLIPPAGE_BPS,
       });
-      decided.add(mint);
+      blockedUntil.set(mint, batch.slot + REENTRY_COOLDOWN_SLOTS);
       free -= MIN_BUY_LAMPORTS + txFee;
       openSlots -= 1;
     }
