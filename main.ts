@@ -39,19 +39,19 @@ const STAKE_LAMPORTS = (LAMPORTS_PER_SOL * 8n) / 100n; // 0.08 SOL per entry
 const MIN_BUY_LAMPORTS = (LAMPORTS_PER_SOL * 2n) / 100n; // 0.02 SOL floor
 const MAX_SLIPPAGE_BPS = 1000; // 10%: latency is 2 slots, reject wild fills
 
-const ENTRY_MAX_AGE_SLOTS = 3000; // coin must be young (~10 min of slots)
-const ENTRY_MIN_TRADES = 6;
-const ENTRY_MIN_BUYERS = 5;
-const ENTRY_MIN_REAL_SOL = 2n * LAMPORTS_PER_SOL;
-const ENTRY_MAX_REAL_SOL = 60n * LAMPORTS_PER_SOL;
+const ENTRY_MAX_AGE_SLOTS = 1500; // coin must be very young (~5 min of slots)
+const ENTRY_MIN_TRADES = 4;
+const ENTRY_MIN_BUYERS = 4;
+const ENTRY_MIN_REAL_SOL = 1n * LAMPORTS_PER_SOL;
+const ENTRY_MAX_REAL_SOL = 30n * LAMPORTS_PER_SOL;
 const ENTRY_NEAR_HIGH_PCT = 85n; // price >= 85% of its window high
 
-const TAKE_PROFIT_PCT = 135n; // sell when value >= 135% of cost
-const STOP_LOSS_PCT = 85n; // sell when value <= 85% of cost
-const TRAIL_ARM_PCT = 112n; // trailing arms once peak >= 112% of cost
-const TRAIL_DROP_PCT = 92n; // sell when value <= 92% of peak
-const STALE_AGE_SLOTS = 9000; // flat too long -> free the slot
-const STALE_MAX_PCT = 105n; // stale exit only while value < 105% of cost
+const TAKE_PROFIT_PCT = 125n; // sell when value >= 125% of cost
+const STOP_LOSS_PCT = 90n; // sell when value <= 90% of cost
+const TRAIL_ARM_PCT = 110n; // trailing arms once peak >= 110% of cost
+const TRAIL_DROP_PCT = 94n; // sell when value <= 94% of peak
+const STALE_AGE_SLOTS = 6000; // flat too long -> free the slot
+const STALE_MAX_PCT = 103n; // stale exit only while value < 103% of cost
 
 // Guardrail probes: coins that missed the strict entry window get one small
 // second chance (0.02 SOL, still above the 0.01 SOL round-trip bar) so the
@@ -223,7 +223,7 @@ await runBot({
       if (tape.trades < ENTRY_MIN_TRADES) continue;
       if (tape.buyers.size < ENTRY_MIN_BUYERS) continue;
       if (tape.buyCount <= tape.sellCount) continue;
-      if (tape.buyVol < tape.sellVol * 2n) continue; // buy volume must dominate
+      if (tape.buyVol * 2n < tape.sellVol * 3n) continue; // buy volume must lead (1.5x)
       const realSol = curve.real_quote_reserves;
       if (realSol < ENTRY_MIN_REAL_SOL || realSol > ENTRY_MAX_REAL_SOL) continue;
       if (
